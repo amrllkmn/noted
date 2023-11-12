@@ -1,18 +1,11 @@
-use axum::{
-    http::StatusCode,
-    response::IntoResponse,
-    routing::{get, post},
-    Json, Router,
-};
+mod handler;
+mod routes;
+
 use dotenv::dotenv;
-use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
+// use serde::{Deserialize, Serialize};
+
 use std::env;
 
-async fn healthcheck() -> (StatusCode, Json<Value>) {
-    let resp = Json(json!({"data": "OK"}));
-    (StatusCode::OK, resp)
-}
 #[tokio::main]
 async fn main() {
     dotenv().ok();
@@ -20,7 +13,9 @@ async fn main() {
     let addr = format!("0.0.0.0:{}", port);
 
     println!("Listening on {}", addr);
-    let app = Router::new().route("/healthcheck", get(healthcheck));
+
+    let app = routes::create_api_route();
+
     axum::Server::bind(&addr.parse().unwrap())
         .serve(app.into_make_service())
         .await
