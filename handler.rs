@@ -1,6 +1,5 @@
 use axum::{extract::Path, http::StatusCode, Json};
 use serde_json::{json, Value};
-use crate::model::Note;
 
 pub async fn healthcheck() -> (StatusCode, Json<Value>) {
     let resp = Json(json!({"data": "OK"}));
@@ -8,14 +7,7 @@ pub async fn healthcheck() -> (StatusCode, Json<Value>) {
 }
 
 pub async fn get_notes_list() -> (StatusCode, Json<Value>) {
-    let sample_note = Note {
-        id: 1,
-        title: "Test".to_string(),
-        content: "Hello World!".to_string()
-    };
-    (StatusCode::OK, Json(json!({"data": [
-        sample_note
-    ]})))
+    (StatusCode::OK, Json(json!({"data": []})))
 }
 
 pub async fn post_note() -> (StatusCode, Json<Value>) {

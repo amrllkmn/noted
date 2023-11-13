@@ -1,5 +1,6 @@
 mod handler;
 mod routes;
+mod model;
 
 use dotenv::dotenv;
 // use serde::{Deserialize, Serialize};
