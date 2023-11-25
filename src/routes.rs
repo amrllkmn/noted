@@ -3,8 +3,9 @@ use axum::{
     routing::{delete, get, patch, post},
     Router,
 };
+use sqlx::{Pool, Postgres};
 
-pub fn create_api_route() -> Router {
+pub fn create_api_route(state: Pool<Postgres>) -> Router {
     let api_routes = Router::new()
         .route(
             // GET /notes, POST /notes
@@ -22,4 +23,5 @@ pub fn create_api_route() -> Router {
     Router::new()
         .route("/healthcheck", get(handler::healthcheck))
         .nest("/api/v1", api_routes) // The routes now would be, e.g: GET /api/v1/notes, GET /api/v1/notes/:id
+        .with_state(state)
 }
