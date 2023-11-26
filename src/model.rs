@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
-use sqlx::{Error, PgPool};
+use sqlx::{query, query_as, Error, FromRow, PgPool};
 use uuid::Uuid;
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, FromRow)]
 pub struct Note {
     id: Uuid,
     title: String,
@@ -36,14 +36,19 @@ pub async fn get_one_note() -> Result<Note, Error> {
     Ok(sample_note)
 }
 
-pub async fn get_notes() -> Result<Vec<Note>, Error> {
-    let notes = vec![Note::new("Hello World!".to_string(), "".to_string())];
-    Ok(notes)
+pub async fn get_notes(pool: &PgPool) -> Result<Vec<Note>, Error> {
+    let result = query_as::<_, Note>("SELECT * FROM notes")
+        .fetch_all(pool)
+        .await;
+    match result {
+        Ok(notes) => Ok(notes),
+        Err(err) => Err(err),
+    }
 }
 
 pub async fn create_note(pool: &PgPool, new_note: CreateNote) -> Result<Note, Error> {
     let note = Note::new(new_note.title, new_note.content);
-    let result = sqlx::query(
+    let result = query(
         r#"
         INSERT INTO notes (id, title, content, created_at, updated_at)
         VALUES ($1, $2, $3, $4, $5)
@@ -88,8 +93,15 @@ mod test {
 
     #[tokio::test]
     async fn get_notes_should_pass() {
-        if let Ok(notes) = get_notes().await {
-            assert_eq!(notes.len(), 1);
+        dotenv().ok();
+        let database_url = env::var("DATABASE_URL").expect("Missing DATABASE_URL env");
+        let pool = PgPoolOptions::new()
+            .max_connections(1)
+            .connect(&database_url)
+            .await
+            .unwrap();
+        if let Ok(notes) = get_notes(&pool).await {
+            assert_eq!(notes.len(), 2);
         }
     }
 

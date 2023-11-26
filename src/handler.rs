@@ -12,14 +12,13 @@ pub async fn healthcheck() -> (StatusCode, Json<Value>) {
     (StatusCode::OK, resp)
 }
 
-pub async fn get_notes_list() -> (StatusCode, Json<Value>) {
-    if let Ok(sample_note) = model::get_one_note().await {
-        (StatusCode::OK, Json(json!({ "data": [sample_note] })))
+pub async fn get_notes_list(State(pool): State<Pool<Postgres>>) -> (StatusCode, Json<Value>) {
+    if let Ok(sample_note) = model::get_notes(&pool).await {
+        (StatusCode::OK, Json(json! {sample_note}))
     } else {
         (
-            StatusCode::NOT_FOUND,
-            Json(json!({
-        "data": "Note not found"})),
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"message": "Something went wrong"})),
         )
     }
 }
