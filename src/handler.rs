@@ -1,4 +1,4 @@
-use crate::model::{self, create_note, CreateNote};
+use crate::model::{self, CreateNote};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -6,6 +6,7 @@ use axum::{
 };
 use serde_json::{json, Value};
 use sqlx::{Pool, Postgres};
+use uuid::Uuid;
 
 pub async fn healthcheck() -> (StatusCode, Json<Value>) {
     let resp = Json(json!({"data": "OK"}));
@@ -27,7 +28,7 @@ pub async fn post_note(
     State(pool): State<Pool<Postgres>>,
     Json(payload): Json<CreateNote>,
 ) -> (StatusCode, Json<Value>) {
-    let result = create_note(&pool, payload).await;
+    let result = model::create_note(&pool, payload).await;
     match result {
         Ok(note) => (StatusCode::CREATED, Json(json! {note})),
         Err(sqlx::Error::Protocol(err)) => (
@@ -42,8 +43,29 @@ pub async fn post_note(
     }
 }
 
-pub async fn get_note(Path(_id): Path<String>) -> (StatusCode, Json<Value>) {
-    todo!()
+pub async fn get_note_by_id(
+    State(pool): State<Pool<Postgres>>,
+    Path(id): Path<String>,
+) -> (StatusCode, Json<Value>) {
+    if let Ok(note_id) = Uuid::parse_str(id.as_str()) {
+        let result = model::get_one_note(&pool, note_id).await;
+        match result {
+            Ok(note) => (StatusCode::OK, Json(json! {note})),
+            Err(sqlx::Error::RowNotFound) => (
+                StatusCode::NOT_FOUND,
+                Json(json!({"message": "Note not found"})),
+            ),
+            Err(_) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"message": "Something went wrong"})),
+            ),
+        }
+    } else {
+        (
+            StatusCode::BAD_REQUEST,
+            Json(json!({"message": "The ID provided is not valid UUID"})),
+        )
+    }
 }
 
 pub async fn update_note(Path(_id): Path<String>) -> (StatusCode, Json<Value>) {

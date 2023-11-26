@@ -15,7 +15,7 @@ pub fn create_api_route(state: Pool<Postgres>) -> Router {
         .route(
             // GET /notes/:id, PATCH /notes/:id, DELETE /notes/:id
             "/notes/:id",
-            get(handler::get_note)
+            get(handler::get_note_by_id)
                 .patch(handler::update_note)
                 .delete(handler::delete_note),
         );

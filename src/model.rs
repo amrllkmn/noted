@@ -30,10 +30,16 @@ impl Note {
     }
 }
 
-pub async fn get_one_note() -> Result<Note, Error> {
-    let sample_note = Note::new("Hello World!".to_string(), "".to_string());
+pub async fn get_one_note(pool: &PgPool, note_id: Uuid) -> Result<Note, Error> {
+    let result = query_as::<_, Note>("SELECT * FROM notes WHERE id = $1")
+        .bind(note_id)
+        .fetch_one(pool)
+        .await;
 
-    Ok(sample_note)
+    match result {
+        Ok(note) => Ok(note),
+        Err(err) => Err(err),
+    }
 }
 
 pub async fn get_notes(pool: &PgPool) -> Result<Vec<Note>, Error> {
@@ -76,7 +82,6 @@ pub async fn create_note(pool: &PgPool, new_note: CreateNote) -> Result<Note, Er
 }
 
 #[cfg(test)]
-
 mod test {
     use sqlx::postgres::PgPoolOptions;
 
@@ -86,8 +91,27 @@ mod test {
 
     #[tokio::test]
     async fn get_one_note_should_pass() {
-        if let Ok(note) = get_one_note().await {
-            assert_eq!(note.title, "Hello World!".to_string());
+        dotenv().ok();
+        let database_url = env::var("DATABASE_URL").expect("Missing DATABASE_URL env");
+        let pool = PgPoolOptions::new()
+            .max_connections(1)
+            .connect(&database_url)
+            .await
+            .unwrap_or_else(|err| {
+                eprintln!("Failed to connect to database: {:?}", err);
+                panic!("Database connection error")
+            });
+
+        let result = get_one_note(
+            &pool,
+            Uuid::parse_str("e26ccf37-aaa7-4031-a67b-d16a3f990632").unwrap(),
+        )
+        .await;
+
+        assert!(result.is_ok());
+
+        if let Ok(note) = result {
+            assert_eq!(note.title, "hello world".to_string());
         }
     }
 
