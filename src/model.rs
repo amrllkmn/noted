@@ -83,70 +83,59 @@ pub async fn create_note(pool: &PgPool, new_note: CreateNote) -> Result<Note, Er
 
 #[cfg(test)]
 mod test {
-    use sqlx::postgres::PgPoolOptions;
+    use sqlx::PgPool;
 
     use super::*;
-    use dotenv::dotenv;
-    use std::env;
 
-    #[tokio::test]
-    async fn get_one_note_should_pass() {
-        dotenv().ok();
-        let database_url = env::var("DATABASE_URL").expect("Missing DATABASE_URL env");
-        let pool = PgPoolOptions::new()
-            .max_connections(1)
-            .connect(&database_url)
-            .await
-            .unwrap_or_else(|err| {
-                eprintln!("Failed to connect to database: {:?}", err);
-                panic!("Database connection error")
-            });
-
-        let result = get_one_note(
-            &pool,
-            Uuid::parse_str("e26ccf37-aaa7-4031-a67b-d16a3f990632").unwrap(),
-        )
-        .await;
-
-        assert!(result.is_ok());
-
-        if let Ok(note) = result {
-            assert_eq!(note.title, "hello world".to_string());
-        }
-    }
-
-    #[tokio::test]
-    async fn get_notes_should_pass() {
-        dotenv().ok();
-        let database_url = env::var("DATABASE_URL").expect("Missing DATABASE_URL env");
-        let pool = PgPoolOptions::new()
-            .max_connections(1)
-            .connect(&database_url)
-            .await
-            .unwrap();
-        if let Ok(notes) = get_notes(&pool).await {
-            assert_eq!(notes.len(), 2);
-        }
-    }
-
-    #[tokio::test]
-    async fn create_note_should_pass() {
-        dotenv().ok();
-        let database_url = env::var("DATABASE_URL").expect("Missing DATABASE_URL env");
-        let pool = PgPoolOptions::new()
-            .max_connections(1)
-            .connect(&database_url)
-            .await
-            .unwrap();
-
+    #[sqlx::test]
+    async fn get_one_note_should_pass(pool: PgPool) -> sqlx::Result<()> {
+        // Insert single note
         let new_note = CreateNote {
             title: "hello world".to_string(),
             content: "".to_string(),
         };
 
-        if let Ok(note) = create_note(&pool, new_note).await {
+        let created_note = create_note(&pool, new_note).await?;
+
+        let result = get_one_note(&pool, created_note.id).await;
+
+        if let Ok(note) = result {
             assert_eq!(note.title, "hello world".to_string());
         }
+
+        Ok(())
+    }
+
+    #[sqlx::test]
+    async fn get_notes_should_pass(pool: PgPool) -> sqlx::Result<()> {
+        // Insert single note
+        let new_note = CreateNote {
+            title: "hello world".to_string(),
+            content: "".to_string(),
+        };
+
+        let _ = create_note(&pool, new_note).await;
+
+        if let Ok(notes) = get_notes(&pool).await {
+            assert_eq!(notes.len(), 1);
+        }
+        Ok(())
+    }
+
+    #[sqlx::test]
+    async fn create_note_should_pass(pool: PgPool) -> sqlx::Result<()> {
+        let new_note = CreateNote {
+            title: "hello world".to_string(),
+            content: "".to_string(),
+        };
+
+        let result = create_note(&pool, new_note).await;
+
+        if let Ok(note) = result {
+            assert_eq!(note.title, "hello world".to_string());
+        }
+
+        Ok(())
     }
 
     // #[tokio::test]
