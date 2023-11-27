@@ -107,6 +107,16 @@ mod test {
     }
 
     #[sqlx::test]
+    async fn get_one_note_should_fail_if_not_found(pool: PgPool) -> sqlx::Result<()> {
+        // note_id doesn't exist in the test database
+        let note_id = Uuid::parse_str("6f845dfe-fa30-45eb-89fb-aa15de682a26").unwrap();
+        let result = get_one_note(&pool, note_id).await;
+
+        assert!(result.is_err_and(|err| matches!(err, sqlx::Error::RowNotFound)));
+        Ok(())
+    }
+
+    #[sqlx::test]
     async fn get_notes_should_pass(pool: PgPool) -> sqlx::Result<()> {
         // Insert single note
         let new_note = CreateNote {
@@ -138,8 +148,23 @@ mod test {
         Ok(())
     }
 
-    // #[tokio::test]
-    // async fn test_should_fail() {
-    // assert_eq!(1,2);
-    // }
+    #[sqlx::test]
+    async fn create_two_notes_with_same_title_should_fail(pool: PgPool) -> sqlx::Result<()> {
+        let new_note = CreateNote {
+            title: "hello world".to_string(),
+            content: "".to_string(),
+        };
+
+        let second_note = CreateNote {
+            title: "hello world".to_string(),
+            content: "".to_string(),
+        };
+
+        let _ = create_note(&pool, new_note).await?;
+
+        let duplicate_note = create_note(&pool, second_note).await;
+
+        assert!(duplicate_note.is_err_and(|err| matches!(err, sqlx::Error::Protocol(_))));
+        Ok(())
+    }
 }
