@@ -20,6 +20,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Listening on {}", addr);
 
+    sqlx::migrate!().run(&state).await?;
+
     let app = routes::create_api_route(state);
 
     axum::Server::bind(&addr.parse().unwrap())
