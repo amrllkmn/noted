@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use sqlx::{error::DatabaseError, query, query_as, Error, FromRow, PgPool};
+use sqlx::{query, query_as, Error, FromRow, PgPool};
 use uuid::Uuid;
 
 #[derive(Debug, Deserialize, Serialize, FromRow)]
