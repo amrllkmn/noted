@@ -95,6 +95,27 @@ pub async fn update_note(
     }
 }
 
-pub async fn delete_note(Path(_id): Path<String>) -> (StatusCode, Json<Value>) {
-    todo!()
+pub async fn delete_note(
+    State(pool): State<Pool<Postgres>>,
+    Path(id): Path<String>,
+) -> (StatusCode, Json<Value>) {
+    if let Ok(note_id) = Uuid::parse_str(id.as_str()) {
+        let result = model::delete_note(&pool, note_id).await;
+        match result {
+            Ok(_) => (StatusCode::OK, Json(json!({"message": "Note deleted"}))),
+            Err(sqlx::Error::RowNotFound) => (
+                StatusCode::NOT_FOUND,
+                Json(json!({"message": "Note not found"})),
+            ),
+            Err(_) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"message": "Something went wrong"})),
+            ),
+        }
+    } else {
+        (
+            StatusCode::BAD_REQUEST,
+            Json(json!({"message": "The ID provided is not valid UUID"})),
+        )
+    }
 }
