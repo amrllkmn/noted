@@ -1,8 +1,5 @@
 use crate::handler;
-use axum::{
-    routing::{delete, get, patch, post},
-    Router,
-};
+use axum::{routing::get, Router};
 use sqlx::{Pool, Postgres};
 
 pub fn create_api_route(state: Pool<Postgres>) -> Router {

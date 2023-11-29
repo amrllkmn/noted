@@ -11,7 +11,7 @@ pub struct Note {
     updated_at: chrono::DateTime<chrono::Utc>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct CreateNote {
     title: String,
     content: String,
@@ -78,6 +78,37 @@ pub async fn create_note(pool: &PgPool, new_note: CreateNote) -> Result<Note, Er
             }
         }
         Err(err) => Err(err),
+    }
+}
+
+pub async fn update_note(
+    pool: &PgPool,
+    updated_note: CreateNote,
+    note_id: Uuid,
+) -> Result<u64, Error> {
+    let now = chrono::Utc::now();
+    let result = query(
+        r#"
+        UPDATE notes
+        SET title = $1, content = $2, updated_at = $3
+        WHERE id =$4
+        "#,
+    )
+    .bind(&updated_note.title)
+    .bind(&updated_note.content)
+    .bind(now)
+    .bind(note_id)
+    .execute(pool)
+    .await;
+
+    if let Ok(rows) = result {
+        if rows.rows_affected() == 0 {
+            Err(Error::RowNotFound)
+        } else {
+            Ok(rows.rows_affected())
+        }
+    } else {
+        Err(Error::Protocol("Something went wrong".to_string()))
     }
 }
 
@@ -165,6 +196,48 @@ mod test {
         let duplicate_note = create_note(&pool, second_note).await;
 
         assert!(duplicate_note.is_err_and(|err| matches!(err, sqlx::Error::Protocol(_))));
+        Ok(())
+    }
+
+    #[sqlx::test]
+    async fn update_a_note_should_pass(pool: PgPool) -> sqlx::Result<()> {
+        let new_note = CreateNote {
+            title: "hello world".to_string(),
+            content: "".to_string(),
+        };
+
+        let updated_note = CreateNote {
+            title: "hello world".to_string(),
+            content: "Added some content".to_string(),
+        };
+
+        let created_note = create_note(&pool, new_note).await?;
+
+        let update_result = update_note(&pool, updated_note, created_note.id).await?;
+
+        assert_eq!(update_result, 1);
+
+        Ok(())
+    }
+
+    #[sqlx::test]
+    async fn update_bad_note_id_should_fail(pool: PgPool) -> sqlx::Result<()> {
+        let random_generated_uuid = Uuid::new_v4();
+
+        let new_note = CreateNote {
+            title: "hello world".to_string(),
+            content: "".to_string(),
+        };
+
+        let note = create_note(&pool, new_note).await?;
+
+        let bad_note = CreateNote {
+            title: note.title,
+            content: "This doesn't exists".to_string(),
+        };
+
+        let updated_result = update_note(&pool, bad_note, random_generated_uuid).await;
+        assert!(updated_result.is_err_and(|err| matches!(err, Error::RowNotFound)));
         Ok(())
     }
 }
