@@ -112,6 +112,28 @@ pub async fn update_note(
     }
 }
 
+pub async fn delete_note(pool: &PgPool, note_id: Uuid) -> Result<u64, Error> {
+    let result = query(
+        r#"
+        DELETE FROM notes
+        WHERE id = $1
+        "#,
+    )
+    .bind(note_id)
+    .execute(pool)
+    .await;
+
+    if let Ok(rows) = result {
+        if rows.rows_affected() == 0 {
+            Err(Error::RowNotFound)
+        } else {
+            Ok(rows.rows_affected())
+        }
+    } else {
+        Err(Error::Protocol("Something went wrong".to_string()))
+    }
+}
+
 #[cfg(test)]
 mod test {
     use sqlx::PgPool;
@@ -238,6 +260,36 @@ mod test {
 
         let updated_result = update_note(&pool, bad_note, random_generated_uuid).await;
         assert!(updated_result.is_err_and(|err| matches!(err, Error::RowNotFound)));
+        Ok(())
+    }
+
+    #[sqlx::test]
+    async fn delete_note_should_pass(pool: PgPool) -> sqlx::Result<()> {
+        let new_note = CreateNote {
+            title: "hello world".to_string(),
+            content: "".to_string(),
+        };
+
+        let note = create_note(&pool, new_note).await?;
+
+        let delete_result = delete_note(&pool, note.id).await;
+        assert!(delete_result.is_ok());
+        Ok(())
+    }
+
+    #[sqlx::test]
+    async fn delete_non_existing_note_should_pass(pool: PgPool) -> sqlx::Result<()> {
+        let random_generated_uuid = Uuid::new_v4();
+
+        let new_note = CreateNote {
+            title: "hello world".to_string(),
+            content: "".to_string(),
+        };
+
+        let _ = create_note(&pool, new_note).await?;
+
+        let delete_result = delete_note(&pool, random_generated_uuid).await;
+        assert!(delete_result.is_err_and(|err| matches!(err, Error::RowNotFound)));
         Ok(())
     }
 }
