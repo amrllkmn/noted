@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 services:
   postgres_dev:
     image: postgres:13
@@ -10,13 +10,16 @@ services:
       POSTGRES_DB: noted_dev
     volumes:
       - ./tmp/db:/var/lib/postgresql/data
-  
+
   noted_service:
     image: noted:0.0.1
     ports:
       - 3000:3000
     environment:
-      PORT: 3000  # Set the port for your Axum app
+      PORT: 3000 # Set the port for your Axum app
       DATABASE_URL: postgres://postgres:postgres@postgres_dev:5432/noted_dev
     depends_on:
       - postgres_dev
+    build:
+      context: .
+      dockerfile: Dockerfile
