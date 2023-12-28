@@ -4,7 +4,6 @@ mod routes;
 use dotenv::dotenv;
 use sqlx::postgres::PgPoolOptions;
 use std::env;
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv().ok();
@@ -24,10 +23,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let app = routes::create_api_route(state);
 
-    axum::Server::bind(&addr.parse().unwrap())
-        .serve(app.into_make_service())
+    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
+    axum::serve(listener, app.into_make_service())
         .await
         .unwrap();
-
     Ok(())
 }
