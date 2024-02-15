@@ -21,5 +21,5 @@ PORT_NUMBER= 3000
 
 ## Front-end
 
-- Next.js (in a separate repo)
+- Svelte (in a separate [repo](https://github.com/amrllkmn/noted-front-end))
 - TailwindCSS
