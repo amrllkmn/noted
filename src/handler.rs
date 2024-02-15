@@ -119,3 +119,13 @@ pub async fn delete_note(
         )
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    fn dummy_test() {
+        let x = 1;
+        assert_eq!(x, 1);
+    }
+}
