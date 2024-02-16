@@ -1,10 +1,13 @@
 use crate::handler;
 use axum::{routing::get, Router};
-use http::Method;
+use http::{HeaderValue, Method};
 use sqlx::{Pool, Postgres};
+use std::env;
 use tower_http::cors::{Any, CorsLayer};
 
 pub fn create_api_route(state: Pool<Postgres>) -> Router {
+    let front_end_url: String = env::var("FRONT_END_URL").expect("Missing FRONT_END_URL");
+    let allowed_origin = front_end_url.parse::<HeaderValue>().unwrap();
     let cors = CorsLayer::new()
         // allow `GET` and `POST` when accessing the resource
         .allow_methods([
@@ -15,7 +18,7 @@ pub fn create_api_route(state: Pool<Postgres>) -> Router {
             Method::OPTIONS,
         ])
         // allow requests from any origin
-        .allow_origin(Any);
+        .allow_origin(allowed_origin);
     let api_routes = Router::new()
         .route(
             // GET /notes, POST /notes
