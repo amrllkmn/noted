@@ -18,6 +18,7 @@ services:
     environment:
       PORT: 3000 # Set the port for your Axum app
       DATABASE_URL: postgres://postgres:postgres@postgres_dev:5432/noted_dev
+      FRONT_END_URL: http://localhost:5173
     depends_on:
       - postgres_dev
     build:
