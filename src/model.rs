@@ -47,9 +47,9 @@ pub async fn get_notes(pool: &PgPool, search_terms: String) -> Result<Vec<Note>,
         "SELECT * FROM notes ORDER BY updated_at DESC;".to_string()
     } else {
         format!(
-             "SELECT * FROM notes WHERE title ILIKE '%{}%' OR content ILIKE '%{}%' ORDER BY updated_at DESC;",
-             search_terms, search_terms
-         )
+            "SELECT * FROM notes WHERE title ILIKE '%{}%' ORDER BY updated_at DESC;",
+            search_terms
+        )
     };
     let result = query_as::<_, Note>(&query).fetch_all(pool).await;
     match result {
