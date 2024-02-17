@@ -42,10 +42,16 @@ pub async fn get_one_note(pool: &PgPool, note_id: Uuid) -> Result<Note, Error> {
     }
 }
 
-pub async fn get_notes(pool: &PgPool) -> Result<Vec<Note>, Error> {
-    let result = query_as::<_, Note>("SELECT * FROM notes ORDER BY updated_at DESC;")
-        .fetch_all(pool)
-        .await;
+pub async fn get_notes(pool: &PgPool, search_terms: String) -> Result<Vec<Note>, Error> {
+    let query: String = if search_terms.is_empty() {
+        "SELECT * FROM notes ORDER BY updated_at DESC;".to_string()
+    } else {
+        format!(
+            "SELECT * FROM notes WHERE title ILIKE '%{}%' ORDER BY updated_at DESC;",
+            search_terms
+        )
+    };
+    let result = query_as::<_, Note>(&query).fetch_all(pool).await;
     match result {
         Ok(notes) => Ok(notes),
         Err(err) => Err(err),
@@ -170,7 +176,7 @@ mod test {
     }
 
     #[sqlx::test]
-    async fn get_notes_should_pass(pool: PgPool) -> sqlx::Result<()> {
+    async fn get_all_notes_should_pass(pool: PgPool) -> sqlx::Result<()> {
         // Insert single note
         let new_note = CreateNote {
             title: "hello world".to_string(),
@@ -179,7 +185,33 @@ mod test {
 
         let _ = create_note(&pool, new_note).await;
 
-        if let Ok(notes) = get_notes(&pool).await {
+        let default_term = "".to_string();
+
+        if let Ok(notes) = get_notes(&pool, default_term).await {
+            assert_eq!(notes.len(), 1);
+        }
+        Ok(())
+    }
+
+    #[sqlx::test]
+    async fn search_notes_should_pass(pool: PgPool) -> sqlx::Result<()> {
+        // Insert single note
+        let new_note = CreateNote {
+            title: "hello world".to_string(),
+            content: "".to_string(),
+        };
+
+        let another_note = CreateNote {
+            title: "testing".to_string(),
+            content: "".to_string(),
+        };
+
+        let _ = create_note(&pool, new_note).await;
+        let _ = create_note(&pool, another_note).await;
+
+        let default_term = "test".to_string();
+
+        if let Ok(notes) = get_notes(&pool, default_term).await {
             assert_eq!(notes.len(), 1);
         }
         Ok(())
