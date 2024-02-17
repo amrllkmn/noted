@@ -1,20 +1,36 @@
 use crate::model::{self, CreateNote};
 use axum::{
-    extract::{Path, State},
+    extract::{Path, Query, State},
     http::StatusCode,
     Json,
 };
+use serde::Deserialize;
 use serde_json::{json, Value};
 use sqlx::{Pool, Postgres};
 use uuid::Uuid;
+
+#[derive(Default, Debug, Deserialize, Clone)]
+pub struct SearchTerms {
+    #[serde(default = "handle_no_params")]
+    search: String,
+}
+
+fn handle_no_params() -> String {
+    "".to_string()
+}
 
 pub async fn healthcheck() -> (StatusCode, Json<Value>) {
     let resp = Json(json!({"data": "OK"}));
     (StatusCode::OK, resp)
 }
 
-pub async fn get_notes_list(State(pool): State<Pool<Postgres>>) -> (StatusCode, Json<Value>) {
-    if let Ok(sample_note) = model::get_notes(&pool).await {
+pub async fn get_notes_list(
+    State(pool): State<Pool<Postgres>>,
+    params: Option<Query<SearchTerms>>,
+) -> (StatusCode, Json<Value>) {
+    let search_terms = params.unwrap_or_default().search.clone();
+
+    if let Ok(sample_note) = model::get_notes(&pool, search_terms).await {
         (StatusCode::OK, Json(json! {sample_note}))
     } else {
         (
@@ -117,15 +133,5 @@ pub async fn delete_note(
             StatusCode::BAD_REQUEST,
             Json(json!({"message": "The ID provided is not valid UUID"})),
         )
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    fn dummy_test() {
-        let x = 1;
-        assert_eq!(x, 1);
     }
 }

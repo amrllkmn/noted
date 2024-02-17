@@ -3,7 +3,7 @@ use axum::{routing::get, Router};
 use http::{HeaderValue, Method};
 use sqlx::{Pool, Postgres};
 use std::env;
-use tower_http::cors::{Any, CorsLayer};
+use tower_http::cors::CorsLayer;
 
 pub fn create_api_route(state: Pool<Postgres>) -> Router {
     let front_end_url: String = env::var("FRONT_END_URL").expect("Missing FRONT_END_URL");
