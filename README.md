@@ -1,6 +1,6 @@
 # NOTED
 
-This is a Markdown note-taking app, with it's back-end written in Rust. Part of the [Coding Challenges](https://codingchallenges.substack.com/p/coding-challenge-35-google-keep)
+This is a Markdown note-taking app, with it's back-end written in Rust. It's part of the [Coding Challenges](https://codingchallenges.substack.com/p/coding-challenge-35-google-keep)
 
 ## How to run
 
@@ -11,6 +11,7 @@ Run `cargo run` at the project's root folder. Optionally, create an `.env` file 
 
 PORT_NUMBER= 3000
 DATABASE_URL= YOUR_DATABASE_URL
+FRONT_END_URL= YOUR_FRONT_END_URL # This one I added for CORS
 ```
 
 OR
