@@ -10,7 +10,12 @@ Run `cargo run` at the project's root folder. Optionally, create an `.env` file 
 # .env
 
 PORT_NUMBER= 3000
+DATABASE_URL= YOUR_DATABASE_URL
 ```
+
+OR
+
+Use docker-compose, which compiles the app and builds up a PostgreSQL DB if you want to skip the .env setup but remember to run `docker-compose up --build` if you have changes (I didn't set up hot reload).
 
 ## Stack
 
@@ -22,4 +27,3 @@ PORT_NUMBER= 3000
 ## Front-end
 
 - Svelte (in a separate [repo](https://github.com/amrllkmn/noted-front-end))
-- TailwindCSS
